@@ -5,8 +5,7 @@ const newBookDialog = document.querySelector('dialog');
 const newBookForm = document.querySelector('form#save_book');
 
 
-function Book(id, title, author, has_read) {
-    this.id = id;
+function Book(title, author, has_read) {
     this.title = title;
     this.author = author;
     this.has_read = has_read;
@@ -17,10 +16,11 @@ const myLibrary = () => {
 
     const addToLibrary = (book) => {
         myBooks.push(book);
+        const bookIndex = myBooks.length - 1;
+        console.log('myBooks', myBooks, 'length', myBooks.length, 'bookIndex', bookIndex);
         const bookCard = document.createElement('div');
         bookCard.className = 'card';
-        // bookCard.dataset.index = myBooks.length;
-        // console.log('dataset.index', bookCard.dataset.index);
+        bookCard.dataset.index = bookIndex;
 
         const bookTitle = document.createElement('div');
         bookTitle.textContent = 'Title: ' + book.title;
@@ -28,18 +28,19 @@ const myLibrary = () => {
         const bookAuthor = document.createElement('div');
         bookAuthor.textContent = 'Author: ' + book.author;
 
-        const hasRead = document.createElement('div');
         const statusToggle = document.createElement('button');
         book.has_read == 'yes' ? statusToggle.textContent = 'Mark as unread' : statusToggle.textContent = 'Mark as read';
-        statusToggle.dataset.index = myBooks.length;
+        // statusToggle.dataset.index = bookIndex;
         statusToggle.addEventListener('click', toggleStatus);
         
         const deleteButton = document.createElement('button');
         deleteButton.textContent = 'Delete';
-        deleteButton.dataset.index = myBooks.length;
+        // deleteButton.dataset.index = bookIndex;
         deleteButton.addEventListener('click', deleteFromLibrary);
-
+        
+        const hasRead = document.createElement('div');
         book.has_read === 'yes' ? hasRead.textContent = 'Completed' : hasRead.textContent = 'Not completed';
+        hasRead.className = 'has-read';
         
         bookCard.appendChild(bookTitle);
         bookCard.appendChild(bookAuthor);
@@ -47,72 +48,53 @@ const myLibrary = () => {
         bookCard.appendChild(deleteButton);
         bookCard.appendChild(statusToggle);
         pageContainer.appendChild(bookCard);
+        console.log('updated myBooks', myBooks);
     };
 
     const deleteFromLibrary = (e) => {
         // fix this, currently it only deletes in reverse order
-        console.log('e.target.dataset.index', e.target.dataset.index);
-        myBooks.splice(e.target.dataset.index - 1, 1);
-        console.log(myBooks);
-        refreshDisplay();
+        console.log('e.target.dataset.index', e.target.parentElement.dataset.index);
+        console.log('delete parentElement', e.target.parentElement);
+        myBooks.splice(e.target.parentElement.dataset.index, 1);
+        e.target.parentElement.remove();
+        
+        const bookCards = document.querySelectorAll('div.card');
+        let bookIndex = 0;
+        bookCards.forEach((bookCard) => {
+            bookCard.dataset.index = bookIndex;
+            console.log('bookCard', bookCard, 'index', bookCard.dataset.index);
+            bookIndex++;
+        })
+        console.log('updated myBooks', myBooks);
     };
 
     const toggleStatus = (e) => {
-        console.log('e.target.dataset.index',  e.target.dataset.index);
-        console.log('selected book', myBooks[e.target.dataset.index - 1]);
-        myBooks[e.target.dataset.index - 1].has_read == 'yes' ? 'no' : 'yes';
-        console.log(myBooks);
-        // refreshDisplay();
+        console.log('e.target.parentElement.dataset.index',  e.target.parentElement.dataset.index);
+        console.log('myBooks', myBooks);
+
+        const selectedBook = myBooks[parseInt(e.target.parentElement.dataset.index)];
+        console.log('selectedBook'. selectedBook, 'has read?', selectedBook.has_read);
+        const hasReadIndicator = e.target.parentElement.querySelector('.has-read');
+        const statusToggleButton = e.target;
+
+        selectedBook.has_read === 'yes' ? (
+            console.log('toggle read => not read'),
+            selectedBook.has_read = 'no',
+            hasReadIndicator.textContent = 'Not completed',
+            statusToggleButton.textContent = 'Mark as read'
+        ) : 
+        selectedBook.has_read === 'no' ? (
+            console.log('toggle not read => read'),
+            selectedBook.has_read = 'yes',
+            hasReadIndicator.textContent = 'Completed',
+            statusToggleButton.textContent = 'Mark as unread'
+        ) : 'something went wrong';
+
+        console.log('updated myBooks', myBooks);
     };
 
-    const refreshDisplay = () => {
-        const currentBooksDisplayed = document.querySelectorAll('.card');
-        for (currentBook of currentBooksDisplayed) {
-            console.log(currentBook);
-        }
-    }
-
-    // const refreshLibrary = () => {
-        while (pageContainer.firstChild) {
-            pageContainer.removeChild(pageContainer.lastChild);
-        }
-
-    //     for (book of myBooks) {
-            // const bookCard = document.createElement('div');
-            // bookCard.className = 'card';
-    //         // bookCard.dataset.index = myBooks.length;
-    //         // console.log('dataset.index', bookCard.dataset.index);
-
-    //         const bookTitle = document.createElement('div');
-    //         bookTitle.textContent = 'Title: ' + book.title;
-
-    //         const bookAuthor = document.createElement('div');
-    //         bookAuthor.textContent = 'Author: ' + book.author;
-
-    //         const hasRead = document.createElement('div');
-    //         const statusToggle = document.createElement('input');
-    //         statusToggle.type = 'checkbox';
-    //         statusToggle.addEventListener('click', toggleStatus);
-            
-    //         const deleteButton = document.createElement('button');
-    //         deleteButton.textContent = 'Delete';
-    //         deleteButton.addEventListener('click', deleteFromLibrary);
-
-            
-            
-    //         book.has_read === 'yes' ? hasRead.textContent = 'Completed' : hasRead.textContent = 'Not completed';
-            
-    //         bookCard.appendChild(bookTitle);
-    //         bookCard.appendChild(bookAuthor);
-    //         bookCard.appendChild(hasRead);
-    //         bookCard.appendChild(deleteButton);
-    //         bookCard.appendChild(statusToggle);
-    //         pageContainer.appendChild(bookCard);
-    //     }
-    // };
-
     newBookButton.addEventListener('click', ((e) => {
-        console.log('clicked new');
+        console.log('add a book');
         newBookDialog.showModal();
     }));
     
@@ -122,10 +104,8 @@ const myLibrary = () => {
         const newBookAuthor = document.querySelector('input#author');
         const hasRead = document.querySelector('input#has_read');
         
-        const newBook = new Book(myBooks.length + 1, newBookTitle.value, newBookAuthor.value, hasRead.checked ? "yes" : "no");
+        const newBook = new Book(newBookTitle.value, newBookAuthor.value, hasRead.checked ? "yes" : "no");
         addToLibrary(newBook);
-        console.log(myBooks);
-        // refreshLibrary();
     
         // clear form inputs
         newBookTitle.value = '';
